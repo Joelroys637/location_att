@@ -18,7 +18,7 @@ def get_location():
         return None, None
 
 
-def compare_coordinates(lat1, lon1, lat2, lon2, tolerance=0.0001):
+def compare_coordinates(lat1, lon1, lat2, lon2, tolerance=0.0005):
     return abs(lat1 - lat2) < tolerance and abs(lon1 - lon2) < tolerance
 
 
@@ -29,14 +29,20 @@ if latitude and longitude:
 else:
     print("Unable to fetch GPS location.")
 
+# Display the latitude and longitude on Streamlit for debugging
+st.write(f"Latitude: {latitude}")
+st.write(f"Longitude: {longitude}")
 
 if st.button("Click"):
     # Preset location for comparison
-    lat = 11.6538
-    lon = 78.1554
+    lat = 11.172543682434414
+    lon = 78.95127871338087
+    
+    # Log comparison values
+    st.write(f"Comparing with preset lat: {lat}, lon: {lon}")
     
     # Check if the current location is within the tolerance of the preset location
     if compare_coordinates(lat, lon, latitude, longitude):
         st.success("Present")
     else:
-        st.error("You are not in the correct location")
+        st.error(f"You are not in the correct location. Your location: {latitude}, {longitude}")
