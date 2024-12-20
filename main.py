@@ -1,82 +1,86 @@
 import streamlit as st
 from streamlit.components.v1 import html
 
-# JavaScript to fetch the user's location
+# JavaScript for fetching the user's location and sending it to Streamlit
 GEOLOCATION_SCRIPT = """
 <script>
 function getLocation() {
     if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(showPosition, showError);
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                // Send latitude and longitude to Streamlit using query params
+                window.parent.postMessage({ latitude: lat, longitude: lon }, "*");
+            },
+            (error) => {
+                window.parent.postMessage({ error: error.message }, "*");
+            }
+        );
     } else {
-        document.getElementById("data").innerHTML = "Geolocation is not supported by this browser.";
+        window.parent.postMessage({ error: "Geolocation is not supported by this browser." }, "*");
     }
 }
 
-function showPosition(position) {
-    const lat = position.coords.latitude;
-    const lon = position.coords.longitude;
-    document.getElementById("data").innerHTML = lat + "," + lon;
-}
-
-function showError(error) {
-    switch(error.code) {
-        case error.PERMISSION_DENIED:
-            document.getElementById("data").innerHTML = "User denied the request for Geolocation.";
-            break;
-        case error.POSITION_UNAVAILABLE:
-            document.getElementById("data").innerHTML = "Location information is unavailable.";
-            break;
-        case error.TIMEOUT:
-            document.getElementById("data").innerHTML = "The request to get user location timed out.";
-            break;
-        case error.UNKNOWN_ERROR:
-            document.getElementById("data").innerHTML = "An unknown error occurred.";
-            break;
-    }
-}
 getLocation();
 </script>
-<div id="data">Fetching location...</div>
+<div>Fetching location...</div>
 """
 
 st.title("Location-based Attendance System")
 
-# Render the geolocation script
-result = html(GEOLOCATION_SCRIPT, height=300)
+# Set up a placeholder for displaying location
+placeholder = st.empty()
 
-# Extract the location data
+# Create a placeholder for latitude and longitude in session state
 if "latitude" not in st.session_state:
-    st.session_state.latitude = None
-    st.session_state.longitude = None
+    st.session_state["latitude"] = None
+if "longitude" not in st.session_state:
+    st.session_state["longitude"] = None
 
-if "Fetching location..." not in result and "," in result:
-    try:
-        latitude, longitude = map(float, result.split(","))
-        st.session_state.latitude = latitude
-        st.session_state.longitude = longitude
-    except ValueError:
-        st.error("Failed to parse GPS coordinates.")
+# Display the JavaScript component
+html(GEOLOCATION_SCRIPT, height=300)
 
-# Display the coordinates
-latitude = st.session_state.latitude
-longitude = st.session_state.longitude
-
-if latitude and longitude:
-    st.success(f"Your location is: Latitude = {latitude}, Longitude = {longitude}")
+# Check for user location
+if st.session_state["latitude"] and st.session_state["longitude"]:
+    st.success(
+        f"Your location is: Latitude = {st.session_state['latitude']}, Longitude = {st.session_state['longitude']}"
+    )
 else:
-    st.warning("Please allow GPS access to fetch your location.")
+    st.warning("Waiting for your location...")
 
+# Attendance button logic
 if st.button("Mark Attendance"):
-    # Preset location
     preset_lat = 11.172543682434414
     preset_lon = 78.95127871338087
+    tolerance = 0.0005  # Define tolerance for location matching
 
-    # Compare the fetched location with the preset location
-    tolerance = 0.0005
-    if latitude and longitude:
-        if abs(latitude - preset_lat) < tolerance and abs(longitude - preset_lon) < tolerance:
+    lat = st.session_state.get("latitude")
+    lon = st.session_state.get("longitude")
+
+    if lat is not None and lon is not None:
+        if abs(lat - preset_lat) < tolerance and abs(lon - preset_lon) < tolerance:
             st.success("Attendance marked successfully!")
         else:
-            st.error(f"You are not in the correct location. Your location: {latitude}, {longitude}")
+            st.error(f"Your location does not match. Latitude: {lat}, Longitude: {lon}")
     else:
         st.error("Unable to fetch your location. Please try again.")
+
+# JavaScript communication to update Streamlit session state
+st.write(
+    """
+    <script>
+    window.addEventListener("message", (event) => {
+        const data = event.data;
+        if (data.latitude && data.longitude) {
+            // Update Streamlit session state with latitude and longitude
+            const streamlit = window.parent.streamlit;
+            streamlit.setComponentValue(JSON.stringify({ latitude: data.latitude, longitude: data.longitude }));
+        } else if (data.error) {
+            console.error(data.error);
+        }
+    });
+    </script>
+    """,
+    unsafe_allow_html=True,
+)
