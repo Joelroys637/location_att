@@ -1,37 +1,32 @@
 import streamlit as st
-import geocoder
 from geopy.geocoders import Nominatim
 
-def get_current_location():
+# Function to reverse geocode
+def get_address_from_coordinates(latitude, longitude):
     try:
-        # Get current latitude and longitude
-        location = geocoder.ip('me')
-        latitude = location.latlng[0]
-        longitude = location.latlng[1]
-        
-        # Reverse geocode the location to get the address
         geolocator = Nominatim(user_agent="location_finder")
-        address = geolocator.reverse((latitude, longitude), language='en')
-        
-        return {
-            "latitude": latitude,
-            "longitude": longitude,
-            "address": address.address if address else "Address not found"
-        }
+        location = geolocator.reverse((latitude, longitude), language='en')
+        return location.address if location else "Address not found"
     except Exception as e:
-        return {"error": str(e)}
+        return f"Error: {str(e)}"
 
-# Streamlit App
-st.title("Find My Current Location")
+# Streamlit app
+st.title("Get Your Current Location")
 
-# Button to fetch location
-if st.button("Get Current Location"):
-    with st.spinner("Fetching location..."):
-        location_details = get_current_location()
-        if "error" in location_details:
-            st.error(f"Error: {location_details['error']}")
-        else:
-            st.success("Location fetched successfully!")
-            st.write(f"**Latitude:** {location_details['latitude']}")
-            st.write(f"**Longitude:** {location_details['longitude']}")
-            st.write(f"**Address:** {location_details['address']}")
+# Add a button to capture location
+st.write("Click the button below to get your current location.")
+location = st.experimental_data_editor({
+    "latitude": None,
+    "longitude": None,
+    "address": "Waiting for input..."
+}, editable=False)
+
+
+# Add JavaScript to get location
+st.markdown("""
+    <script>
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            const latitude = position.coords.lat 
+
+      </code>`
