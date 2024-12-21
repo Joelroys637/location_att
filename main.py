@@ -13,7 +13,7 @@ def get_address_from_coordinates(latitude, longitude):
 # Streamlit app
 st.title("Automatically Fetch Current Location")
 
-# JavaScript to fetch the geolocation
+# JavaScript to fetch geolocation
 st.markdown("""
     <script>
     navigator.geolocation.getCurrentPosition(
@@ -23,6 +23,11 @@ st.markdown("""
             document.getElementById("latitude").value = latitude;
             document.getElementById("longitude").value = longitude;
             document.getElementById("location-form").dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+        },
+        (error) => {
+            const errorMessage = `Error: ${error.message}`;
+            document.getElementById("error").value = errorMessage;
+            document.getElementById("error-form").dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
         }
     );
     </script>
@@ -30,13 +35,19 @@ st.markdown("""
         <input id="latitude" name="latitude" type="hidden" />
         <input id="longitude" name="longitude" type="hidden" />
     </form>
+    <form id="error-form" method="post">
+        <input id="error" name="error" type="hidden" />
+    </form>
 """, unsafe_allow_html=True)
 
-# Fetch latitude and longitude from the form
+# Get location or error from query params
 latitude = st.query_params.get("latitude", [None])[0]
 longitude = st.query_params.get("longitude", [None])[0]
+error = st.query_params.get("error", [None])[0]
 
-if latitude and longitude:
+if error:
+    st.error(error)
+elif latitude and longitude:
     # Convert string to float
     latitude = float(latitude)
     longitude = float(longitude)
