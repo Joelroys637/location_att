@@ -11,7 +11,7 @@ def get_address_from_coordinates(latitude, longitude):
         return f"Error: {str(e)}"
 
 # Streamlit app
-st.title("Get Your Current Location")
+st.title("Automatically Fetch Current Location")
 
 # JavaScript to fetch the geolocation
 st.markdown("""
@@ -22,13 +22,13 @@ st.markdown("""
             const longitude = position.coords.longitude;
             document.getElementById("latitude").value = latitude;
             document.getElementById("longitude").value = longitude;
-            document.getElementById("form").dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+            document.getElementById("location-form").dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
         }
     );
     </script>
-    <form id="form" method="post">
-        <input id="latitude" name="latitude" type="text" />
-        <input id="longitude" name="longitude" type="text" />
+    <form id="location-form" method="post">
+        <input id="latitude" name="latitude" type="hidden" />
+        <input id="longitude" name="longitude" type="hidden" />
     </form>
 """, unsafe_allow_html=True)
 
@@ -37,6 +37,10 @@ latitude = st.experimental_get_query_params().get("latitude", [None])[0]
 longitude = st.experimental_get_query_params().get("longitude", [None])[0]
 
 if latitude and longitude:
+    # Convert string to float
+    latitude = float(latitude)
+    longitude = float(longitude)
+
     # Display coordinates
     st.success(f"Latitude: {latitude}")
     st.success(f"Longitude: {longitude}")
@@ -45,4 +49,4 @@ if latitude and longitude:
     address = get_address_from_coordinates(latitude, longitude)
     st.write(f"**Address:** {address}")
 else:
-    st.write("Click the button in the popup to allow location access.")
+    st.info("Allow location access in your browser for this app to fetch your current location automatically.")
