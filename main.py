@@ -13,7 +13,7 @@ def get_address_from_coordinates(latitude, longitude):
 # Streamlit app
 st.title("Automatically Fetch Current Location")
 
-# JavaScript to fetch geolocation
+# JavaScript to fetch geolocation and send it back to Streamlit
 st.markdown("""
     <script>
     navigator.geolocation.getCurrentPosition(
@@ -22,33 +22,26 @@ st.markdown("""
             const longitude = position.coords.longitude;
             document.getElementById("latitude").value = latitude;
             document.getElementById("longitude").value = longitude;
-            document.getElementById("location-form").dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+            document.getElementById("location-form").submit();
         },
         (error) => {
-            const errorMessage = `Error: ${error.message}`;
-            document.getElementById("error").value = errorMessage;
-            document.getElementById("error-form").dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+            document.getElementById("error-message").innerText = `Error: ${error.message}`;
         }
     );
     </script>
-    <form id="location-form" method="post">
+    <form id="location-form" method="GET">
         <input id="latitude" name="latitude" type="hidden" />
         <input id="longitude" name="longitude" type="hidden" />
     </form>
-    <form id="error-form" method="post">
-        <input id="error" name="error" type="hidden" />
-    </form>
+    <p id="error-message" style="color: red;"></p>
 """, unsafe_allow_html=True)
 
-# Get location or error from query params
-latitude = st.query_params.get("latitude", [None])[0]
-longitude = st.query_params.get("longitude", [None])[0]
-error = st.query_params.get("error", [None])[0]
+# Retrieve latitude and longitude from URL parameters
+latitude = st.experimental_get_query_params().get("latitude", [None])[0]
+longitude = st.experimental_get_query_params().get("longitude", [None])[0]
 
-if error:
-    st.error(error)
-elif latitude and longitude:
-    # Convert string to float
+if latitude and longitude:
+    # Convert coordinates from strings to float
     latitude = float(latitude)
     longitude = float(longitude)
 
@@ -56,8 +49,8 @@ elif latitude and longitude:
     st.success(f"Latitude: {latitude}")
     st.success(f"Longitude: {longitude}")
 
-    # Get and display address
+    # Reverse geocode to get the address
     address = get_address_from_coordinates(latitude, longitude)
     st.write(f"**Address:** {address}")
 else:
-    st.info("Allow location access in your browser for this app to fetch your current location automatically.")
+    st.info("Allow location access in your browser for the app to automatically fetch your current location.")
