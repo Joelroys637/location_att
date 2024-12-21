@@ -33,8 +33,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Fetch latitude and longitude from the form
-latitude = st.experimental_get_query_params().get("latitude", [None])[0]
-longitude = st.experimental_get_query_params().get("longitude", [None])[0]
+latitude = st.query_params.get("latitude", [None])[0]
+longitude = st.query_params.get("longitude", [None])[0]
 
 if latitude and longitude:
     # Convert string to float
